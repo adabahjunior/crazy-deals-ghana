@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/v1",
+      "destination": "https://qdpszufiwgweniwjdolu.supabase.co/functions/v1/developer-api"
+    },
+    {
+      "source": "/api/v1/:path*",
+      "destination": "https://qdpszufiwgweniwjdolu.supabase.co/functions/v1/developer-api/:path*"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
