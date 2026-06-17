@@ -9,7 +9,7 @@
       "destination": "https://qdpszufiwgweniwjdolu.supabase.co/functions/v1/developer-api/:path*"
     },
     {
-      "source": "/((?!api/).*)",
+      "source": "/((?!api/|.*\\..*).*)",
       "destination": "/index.html"
     }
   ]
