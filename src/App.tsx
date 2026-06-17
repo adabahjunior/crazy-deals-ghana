@@ -30,8 +30,20 @@ import AdminNotificationsPage from './pages/admin/AdminNotificationsPage'
 import AdminOrdersPage from './pages/admin/AdminOrdersPage'
 import PublicStorePage from './pages/PublicStorePage'
 import ApiDocsPage from './pages/ApiDocsPage'
+import { hasSupabaseEnv, supabaseEnvError } from './lib/supabase'
 
 export default function App() {
+  if (!hasSupabaseEnv) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: '24px' }}>
+        <div style={{ maxWidth: '720px', textAlign: 'center' }}>
+          <h1>Configuration required</h1>
+          <p>{supabaseEnvError}</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <AuthProvider>
       <BrowserRouter>
