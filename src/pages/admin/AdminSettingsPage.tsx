@@ -56,9 +56,19 @@ export default function AdminSettingsPage() {
 
   const storeActivationEnabled = getSetting('store_activation_enabled') === 'true'
   const swiftdataKeys = ['swiftdata_enabled', 'swiftdata_api_key', 'swiftdata_api_url']
+  const gamificationKeys = [
+    'gamification_referral_points',
+    'gamification_redemption_points',
+    'gamification_spin_interval_days',
+    'gamification_spin_network',
+    'gamification_spin_weight_points_5',
+    'gamification_spin_weight_points_10',
+    'gamification_spin_weight_data',
+  ]
   const generalSettings = settings.filter(
-    (s) => !['store_activation_enabled', 'store_activation_cost', ...swiftdataKeys].includes(s.key)
+    (s) => !['store_activation_enabled', 'store_activation_cost', ...swiftdataKeys, ...gamificationKeys].includes(s.key)
   )
+  const gamificationSettings = settings.filter((s) => gamificationKeys.includes(s.key))
 
   return (
     <>
@@ -137,6 +147,26 @@ export default function AdminSettingsPage() {
               onChange={(e) => handleChange('swiftdata_api_url', e.target.value)}
             />
           </div>
+        </div>
+      </div>
+
+      <div className="content-card" style={{ marginBottom: '1.5rem' }}>
+        <h2>Gamification & Rewards</h2>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '1.25rem', fontSize: '0.95rem' }}>
+          Configure referral points, spin wheel weights, and redemption thresholds.
+        </p>
+        <div className="form-grid">
+          {gamificationSettings.map((setting) => (
+            <div className="form-group" key={setting.key}>
+              <label>{setting.label ?? setting.key}</label>
+              <input
+                type="text"
+                className="form-input"
+                value={setting.value}
+                onChange={(e) => handleChange(setting.key, e.target.value)}
+              />
+            </div>
+          ))}
         </div>
       </div>
 

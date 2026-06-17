@@ -1,6 +1,13 @@
 export type NetworkType = 'mtn' | 'airtel-ishare' | 'airtel-bigtime' | 'telecel'
 export type TransactionStatus = 'pending' | 'processing' | 'success' | 'failed'
-export type TransactionType = 'data_purchase' | 'wallet_topup' | 'store_order' | 'withdrawal' | 'store_activation'
+export type TransactionType =
+  | 'data_purchase'
+  | 'wallet_topup'
+  | 'store_order'
+  | 'withdrawal'
+  | 'store_activation'
+  | 'points_redemption'
+  | 'spin_reward'
 
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
@@ -161,6 +168,11 @@ export interface Profile {
   store_whatsapp: string | null
   store_published: boolean
   store_activation_paid: boolean
+  points_balance: number
+  referral_code: string | null
+  referred_by: string | null
+  bonus_spin_chances: number
+  last_spin_at: string | null
   created_at: string
   updated_at: string
 }

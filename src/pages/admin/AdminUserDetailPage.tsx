@@ -26,6 +26,12 @@ export default function AdminUserDetailPage() {
   const [creditAmount, setCreditAmount] = useState('')
   const [creditNote, setCreditNote] = useState('')
   const [crediting, setCrediting] = useState(false)
+  const [spinCount, setSpinCount] = useState('')
+  const [spinNote, setSpinNote] = useState('')
+  const [grantingSpins, setGrantingSpins] = useState(false)
+  const [pointsAdjust, setPointsAdjust] = useState('')
+  const [pointsNote, setPointsNote] = useState('')
+  const [adjustingPoints, setAdjustingPoints] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
 
   const load = useCallback(async () => {
@@ -94,6 +100,72 @@ export default function AdminUserDetailPage() {
     load()
   }
 
+  const handleGrantSpins = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!userId) return
+
+    const count = parseInt(spinCount, 10)
+    if (isNaN(count) || count <= 0) {
+      setError('Enter a valid spin count greater than zero')
+      return
+    }
+
+    setGrantingSpins(true)
+    setError('')
+    setMessage('')
+
+    const { error: rpcError } = await supabase.rpc('admin_grant_spin_chances', {
+      p_user_id: userId,
+      p_count: count,
+      p_note: spinNote.trim() || null,
+    } as { p_user_id: string; p_count: number; p_note: string | null })
+
+    setGrantingSpins(false)
+
+    if (rpcError) {
+      setError(rpcError.message)
+      return
+    }
+
+    setSpinCount('')
+    setSpinNote('')
+    setMessage(`Granted ${count} bonus spin${count === 1 ? '' : 's'}`)
+    load()
+  }
+
+  const handleAdjustPoints = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!userId) return
+
+    const amount = parseInt(pointsAdjust, 10)
+    if (isNaN(amount) || amount === 0) {
+      setError('Enter a non-zero points amount')
+      return
+    }
+
+    setAdjustingPoints(true)
+    setError('')
+    setMessage('')
+
+    const { error: rpcError } = await supabase.rpc('admin_adjust_points', {
+      p_user_id: userId,
+      p_amount: amount,
+      p_note: pointsNote.trim() || null,
+    } as { p_user_id: string; p_amount: number; p_note: string | null })
+
+    setAdjustingPoints(false)
+
+    if (rpcError) {
+      setError(rpcError.message)
+      return
+    }
+
+    setPointsAdjust('')
+    setPointsNote('')
+    setMessage(`Adjusted points by ${amount > 0 ? '+' : ''}${amount}`)
+    load()
+  }
+
   const copyStoreLink = async () => {
     if (!profile?.store_slug) return
     await navigator.clipboard.writeText(getStoreUrl(profile.store_slug))
@@ -158,6 +230,14 @@ export default function AdminUserDetailPage() {
         <div className="stat-card">
           <div className="label">Total Spent</div>
           <div className="value">{formatMoney(profile.total_spent)}</div>
+        </div>
+        <div className="stat-card">
+          <div className="label">Reward Points</div>
+          <div className="value accent">{profile.points_balance ?? 0}</div>
+        </div>
+        <div className="stat-card">
+          <div className="label">Bonus Spins</div>
+          <div className="value">{profile.bonus_spin_chances ?? 0}</div>
         </div>
       </div>
 
@@ -252,6 +332,85 @@ export default function AdminUserDetailPage() {
           <div className="form-actions">
             <button type="submit" className="btn btn-primary" disabled={crediting}>
               {crediting ? 'Crediting...' : 'Credit Wallet'}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div className="content-card" style={{ marginBottom: '1.5rem' }}>
+        <h2>Grant Bonus Spins</h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginBottom: '1rem' }}>
+          Give this user extra spin chances that bypass the 25-day cooldown.
+        </p>
+        <form onSubmit={handleGrantSpins}>
+          <div className="form-grid">
+            <div className="form-group">
+              <label htmlFor="spinCount">Number of Spins</label>
+              <input
+                id="spinCount"
+                type="number"
+                min="1"
+                className="form-input"
+                required
+                value={spinCount}
+                onChange={(e) => setSpinCount(e.target.value)}
+                placeholder="e.g. 3"
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="spinNote">Note (optional)</label>
+              <input
+                id="spinNote"
+                type="text"
+                className="form-input"
+                value={spinNote}
+                onChange={(e) => setSpinNote(e.target.value)}
+                placeholder="Reason for bonus spins"
+              />
+            </div>
+          </div>
+          <div className="form-actions">
+            <button type="submit" className="btn btn-primary" disabled={grantingSpins}>
+              {grantingSpins ? 'Granting...' : 'Grant Spins'}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div className="content-card" style={{ marginBottom: '1.5rem' }}>
+        <h2>Adjust Reward Points</h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginBottom: '1rem' }}>
+          Add or remove points. Use negative values to deduct.
+        </p>
+        <form onSubmit={handleAdjustPoints}>
+          <div className="form-grid">
+            <div className="form-group">
+              <label htmlFor="pointsAdjust">Points (+/-)</label>
+              <input
+                id="pointsAdjust"
+                type="number"
+                className="form-input"
+                required
+                value={pointsAdjust}
+                onChange={(e) => setPointsAdjust(e.target.value)}
+                placeholder="e.g. 10 or -5"
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="pointsNote">Note (optional)</label>
+              <input
+                id="pointsNote"
+                type="text"
+                className="form-input"
+                value={pointsNote}
+                onChange={(e) => setPointsNote(e.target.value)}
+                placeholder="Reason for adjustment"
+              />
+            </div>
+          </div>
+          <div className="form-actions">
+            <button type="submit" className="btn btn-primary" disabled={adjustingPoints}>
+              {adjustingPoints ? 'Updating...' : 'Adjust Points'}
             </button>
           </div>
         </form>

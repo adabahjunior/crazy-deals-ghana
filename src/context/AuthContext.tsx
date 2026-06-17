@@ -19,7 +19,7 @@ interface AuthContextType {
   isAgent: boolean
   loading: boolean
   login: (email: string, password: string) => Promise<{ error: AuthError | null }>
-  signup: (email: string, password: string, fullName: string) => Promise<{ error: AuthError | null; session: Session | null }>
+  signup: (email: string, password: string, fullName: string, referralCode?: string) => Promise<{ error: AuthError | null; session: Session | null }>
   logout: () => Promise<void>
   refreshProfile: () => Promise<void>
   updateProfile: (data: { full_name?: string; phone?: string }) => Promise<{ error: string | null }>
@@ -107,11 +107,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error }
   }, [])
 
-  const signup = useCallback(async (email: string, password: string, fullName: string) => {
+  const signup = useCallback(async (email: string, password: string, fullName: string, referralCode?: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName } },
+      options: {
+        data: {
+          full_name: fullName,
+          ...(referralCode ? { referral_code: referralCode } : {}),
+        },
+      },
     })
     return { error, session: data.session }
   }, [])

@@ -30,6 +30,7 @@ import AdminNotificationsPage from './pages/admin/AdminNotificationsPage'
 import AdminOrdersPage from './pages/admin/AdminOrdersPage'
 import PublicStorePage from './pages/PublicStorePage'
 import ApiDocsPage from './pages/ApiDocsPage'
+import RewardsPage from './pages/RewardsPage'
 import { hasSupabaseEnv, supabaseEnvError } from './lib/supabase'
 
 export default function App() {
@@ -66,6 +67,7 @@ export default function App() {
               <Route path="buy-telecel" element={<BuyTelecelDataPage />} />
               <Route path="afa-registration" element={<AfaRegistrationPage />} />
               <Route path="extra-services" element={<ExtraServicesPage />} />
+              <Route path="rewards" element={<RewardsPage />} />
               <Route path="my-store" element={<MyStorePage />} />
               <Route path="store-packages" element={<StorePackagesPage />} />
               <Route path="store-orders" element={<StoreOrdersPage />} />

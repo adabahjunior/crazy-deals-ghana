@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Eye, EyeOff } from '../components/icons'
 import { formatAuthError } from '../lib/authErrors'
@@ -7,6 +7,8 @@ import { formatAuthError } from '../lib/authErrors'
 export default function LoginPage() {
   const { login, signup } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const referralCode = searchParams.get('ref')?.trim() || ''
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -35,7 +37,12 @@ export default function LoginPage() {
         setLoading(false)
         return
       }
-      const { error: authError, session } = await signup(email, password, fullName.trim())
+      const { error: authError, session } = await signup(
+        email,
+        password,
+        fullName.trim(),
+        referralCode || undefined,
+      )
       if (authError) {
         setError(formatAuthError(authError))
       } else if (session) {
@@ -91,6 +98,20 @@ export default function LoginPage() {
               textAlign: 'center',
             }}>
               {message}
+            </div>
+          )}
+
+          {mode === 'signup' && referralCode && (
+            <div style={{
+              background: 'rgba(59, 130, 246, 0.1)',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              color: '#93c5fd',
+              padding: '0.75rem 1rem',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '0.9rem',
+              textAlign: 'center',
+            }}>
+              You were referred! Your referrer will earn bonus points when you sign up.
             </div>
           )}
 
