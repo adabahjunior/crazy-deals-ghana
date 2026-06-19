@@ -12,6 +12,12 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const inviteCode = searchParams.get('invite')?.trim() || ''
+  const referralCode = searchParams.get('ref')?.trim() || ''
+  const registerHref = inviteCode
+    ? `/auth/register?invite=${encodeURIComponent(inviteCode)}`
+    : referralCode
+      ? `/auth/register?ref=${encodeURIComponent(referralCode)}`
+      : '/auth/register'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -111,11 +117,7 @@ export default function LoginPage() {
         </form>
 
         <p className="dm-auth-footer login">
-          Don&apos;t have an account?{' '}
-          <a href="https://wa.me/233241234567" target="_blank" rel="noopener noreferrer">
-            Contact CrazyDeals support on WhatsApp
-          </a>{' '}
-          to become an agent.
+          Don&apos;t have an account? <Link to={registerHref}>Create Account</Link>
         </p>
       </div>
     </AuthLayout>
