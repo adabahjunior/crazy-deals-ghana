@@ -39,7 +39,7 @@ export default function RewardsPage() {
   const referralLink = useMemo(() => {
     if (!status?.referral_code) return ''
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://crazydealsgh.shop'
-    return `${origin}/?ref=${status.referral_code}`
+    return `${origin}/auth/register?ref=${status.referral_code}`
   }, [status?.referral_code])
 
   const handleSpin = async () => {

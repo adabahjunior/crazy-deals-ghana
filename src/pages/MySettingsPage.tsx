@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import PageHeader from '../components/PageHeader'
+import { getStoreUrl } from '../lib/storeUtils'
+import { useSubAgentInfo } from '../hooks/useSubAgentInfo'
+import { supabase } from '../lib/supabase'
 
 export default function MySettingsPage() {
   const { user, profile, updateProfile, updatePassword } = useAuth()
+  const { info: subAgentInfo, refresh: refreshSubAgent } = useSubAgentInfo()
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -52,10 +56,62 @@ export default function MySettingsPage() {
 
   return (
     <>
-      <PageHeader
-        title="My Settings"
-        description="Update your account information and preferences"
-      />
+      <div className="dm-page-head">
+        <div>
+          <h1>Settings</h1>
+          <p>Update your account information and preferences</p>
+        </div>
+      </div>
+
+      <div className="content-card" style={{ marginBottom: '1.5rem' }}>
+        <h2>Store Status</h2>
+        <p style={{ color: 'var(--dm-surface-400)', marginBottom: '1rem' }}>
+          {profile?.store_published
+            ? 'Your store is live and accepting orders.'
+            : 'Activate your store to start selling data bundles to customers.'}
+        </p>
+        <div className="dm-settings-row">
+          <div>
+            <strong>{profile?.store_name ?? 'My Store'}</strong>
+            <p style={{ color: 'var(--dm-surface-500)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
+              {profile?.store_slug ? getStoreUrl(profile.store_slug) : 'No store link yet'}
+            </p>
+          </div>
+          <span className={`dm-status-pill ${profile?.store_published ? 'online' : 'offline'}`}>
+            {profile?.store_published ? 'Store Open' : 'Store Closed'}
+          </span>
+        </div>
+        <div className="form-actions" style={{ marginTop: '1rem' }}>
+          <Link to="/dashboard/my-store" className="btn btn-primary">
+            {profile?.store_published ? 'Manage Store' : 'Activate Store'}
+          </Link>
+        </div>
+      </div>
+
+      {subAgentInfo?.is_sub_agent && (
+        <div className="content-card" style={{ marginBottom: '1.5rem' }}>
+          <h2>Sub-Agent Team</h2>
+          <p style={{ color: 'var(--dm-surface-400)', marginBottom: '1rem' }}>
+            You sell under <strong>{subAgentInfo.parent_name}</strong> with {subAgentInfo.commission_pct}% profit commission.
+          </p>
+          <div className="form-actions">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={async () => {
+                const { data, error: rpcError } = await supabase.rpc('sync_store_packages_from_parent')
+                if (rpcError) setError(rpcError.message)
+                else {
+                  setProfileMsg(`Synced ${data ?? 0} packages from your parent agent`)
+                  await refreshSubAgent()
+                }
+              }}
+            >
+              Sync Catalog from Parent
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="content-card">
         <h2>Profile Information</h2>

@@ -1,16 +1,17 @@
 import { useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { Eye, EyeOff } from '../components/icons'
+import AuthLayout from '../components/auth/AuthLayout'
+import AuthInput from '../components/auth/AuthInput'
+import GoogleButton, { AuthDivider } from '../components/auth/AuthShared'
+import { ArrowRight, Eye, EyeOff, Lock, Mail } from '../components/icons'
 import { formatAuthError } from '../lib/authErrors'
 
 export default function LoginPage() {
-  const { login, signup } = useAuth()
+  const { login, acceptSubAgentInvite } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const referralCode = searchParams.get('ref')?.trim() || ''
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
-  const [fullName, setFullName] = useState('')
+  const inviteCode = searchParams.get('invite')?.trim() || ''
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -24,152 +25,99 @@ export default function LoginPage() {
     setMessage('')
     setLoading(true)
 
-    if (mode === 'login') {
-      const { error: authError } = await login(email, password)
-      if (authError) {
-        setError(formatAuthError(authError))
-      } else {
-        navigate('/dashboard')
-      }
-    } else {
-      if (!fullName.trim()) {
-        setError('Please enter your full name.')
-        setLoading(false)
-        return
-      }
-      const { error: authError, session } = await signup(
-        email,
-        password,
-        fullName.trim(),
-        referralCode || undefined,
-      )
-      if (authError) {
-        setError(formatAuthError(authError))
-      } else if (session) {
-        navigate('/dashboard')
-      } else {
-        setMessage('Account created! You can now sign in.')
-        setMode('login')
-      }
+    const { error: authError } = await login(email, password)
+    if (authError) {
+      setError(formatAuthError(authError))
+      setLoading(false)
+      return
     }
 
+    if (inviteCode) {
+      const { error: inviteError } = await acceptSubAgentInvite(inviteCode)
+      if (inviteError) setMessage(`Signed in, but invite failed: ${inviteError}`)
+    }
+
+    navigate('/dashboard')
     setLoading(false)
   }
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <div className="auth-logo">
-          <h1>
-            Crazy<span>Deals</span> Ghana
-          </h1>
-          <p>Your trusted data reselling platform</p>
+    <AuthLayout variant="login">
+      <div className="dm-auth-card login">
+        <div className="dm-auth-card-head">
+          <h2>Welcome Back</h2>
+          <p>Sign in to your agent account</p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
-          <button
-            type="button"
-            className={`btn ${mode === 'login' ? 'btn-primary' : 'btn-secondary'}`}
-            style={{ flex: 1 }}
-            onClick={() => { setMode('login'); setError(''); setMessage('') }}
-          >
-            Sign In
-          </button>
-          <button
-            type="button"
-            className={`btn ${mode === 'signup' ? 'btn-primary' : 'btn-secondary'}`}
-            style={{ flex: 1 }}
-            onClick={() => { setMode('signup'); setError(''); setMessage('') }}
-          >
-            Sign Up
-          </button>
-        </div>
+        {inviteCode && (
+          <div className="dm-auth-banner info">Sub-agent invite detected. Sign in to join the team.</div>
+        )}
 
-        <form className="auth-form" onSubmit={handleSubmit}>
-          {error && <div className="auth-error">{error}</div>}
-          {message && (
-            <div style={{
-              background: 'rgba(34, 197, 94, 0.1)',
-              border: '1px solid rgba(34, 197, 94, 0.3)',
-              color: '#4ade80',
-              padding: '0.75rem 1rem',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.9rem',
-              textAlign: 'center',
-            }}>
-              {message}
-            </div>
-          )}
+        <GoogleButton
+          variant="login"
+          onClick={() => setMessage('Google sign-in is not configured yet. Please use email.')}
+        />
 
-          {mode === 'signup' && referralCode && (
-            <div style={{
-              background: 'rgba(59, 130, 246, 0.1)',
-              border: '1px solid rgba(59, 130, 246, 0.3)',
-              color: '#93c5fd',
-              padding: '0.75rem 1rem',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.9rem',
-              textAlign: 'center',
-            }}>
-              You were referred! Your referrer will earn bonus points when you sign up.
-            </div>
-          )}
+        <AuthDivider label="or" variant="login" />
 
-          {mode === 'signup' && (
-            <div className="form-group">
-              <label htmlFor="fullName">Full Name</label>
-              <input
-                id="fullName"
-                type="text"
-                className="form-input"
-                placeholder="Your full name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-              />
-            </div>
-          )}
+        <form className="dm-auth-form login" onSubmit={handleSubmit}>
+          {error && <div className="dm-auth-alert error">{error}</div>}
+          {message && <div className="dm-auth-alert success">{message}</div>}
 
-          <div className="form-group">
-            <label htmlFor="email">Email Address</label>
-            <input
-              id="email"
-              type="email"
-              className="form-input"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-            />
-          </div>
+          <AuthInput
+            id="loginEmail"
+            label="Email"
+            type="email"
+            placeholder="you@example.com"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            icon={<Mail />}
+            variant="login"
+            required
+          />
 
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <div className="password-wrapper">
-              <input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                className="form-input"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              />
+          <AuthInput
+            id="loginPassword"
+            label="Password"
+            type={showPassword ? 'text' : 'password'}
+            placeholder="••••••••"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            icon={<Lock />}
+            variant="login"
+            suffix={
               <button
                 type="button"
-                className="password-toggle"
+                className="dm-auth-eye"
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff /> : <Eye />}
               </button>
-            </div>
+            }
+            required
+          />
+
+          <div className="dm-auth-row">
+            <Link to="/auth/forgot-password" className="dm-auth-link">Forgot password?</Link>
           </div>
 
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? 'Please wait...' : mode === 'login' ? 'Sign In' : 'Create Account'}
+          <button type="submit" className="dm-auth-submit login" disabled={loading}>
+            {loading ? 'Signing in...' : 'Sign In'}
+            {!loading && <ArrowRight />}
           </button>
         </form>
+
+        <p className="dm-auth-footer login">
+          Don&apos;t have an account?{' '}
+          <a href="https://wa.me/233241234567" target="_blank" rel="noopener noreferrer">
+            Contact CrazyDeals support on WhatsApp
+          </a>{' '}
+          to become an agent.
+        </p>
       </div>
-    </div>
+    </AuthLayout>
   )
 }

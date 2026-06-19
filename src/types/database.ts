@@ -126,6 +126,24 @@ export interface Database {
         Update: Partial<IssueReport>
         Relationships: []
       }
+      promo_codes: {
+        Row: PromoCode
+        Insert: Partial<PromoCode> & { agent_id: string; code: string; network: string; size_gb: number }
+        Update: Partial<PromoCode>
+        Relationships: []
+      }
+      sub_agent_invites: {
+        Row: SubAgentInvite
+        Insert: Partial<SubAgentInvite> & { parent_agent_id: string; invite_code: string }
+        Update: Partial<SubAgentInvite>
+        Relationships: []
+      }
+      email_campaigns: {
+        Row: EmailCampaign
+        Insert: Partial<EmailCampaign> & { agent_id: string; subject: string; body: string }
+        Update: Partial<EmailCampaign>
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: {
@@ -173,8 +191,66 @@ export interface Profile {
   referred_by: string | null
   bonus_spin_chances: number
   last_spin_at: string | null
+  parent_agent_id: string | null
+  sub_agent_commission_pct: number
+  agent_settings: AgentSettings
   created_at: string
   updated_at: string
+}
+
+export interface AgentSettings {
+  whatsapp?: {
+    enabled?: boolean
+    greeting?: string
+    auto_reply?: string
+  }
+  email?: {
+    host?: string
+    port?: string
+    user?: string
+    from_name?: string
+    from_email?: string
+  }
+}
+
+export interface PromoCode {
+  id: string
+  agent_id: string
+  code: string
+  network: string
+  size_gb: number
+  max_redemptions: number
+  redemption_count: number
+  expires_at: string | null
+  is_active: boolean
+  created_at: string
+}
+
+export interface SubAgentInvite {
+  id: string
+  parent_agent_id: string
+  invite_code: string
+  label: string | null
+  commission_pct: number
+  status: 'active' | 'revoked'
+  uses_count: number
+  created_at: string
+}
+
+export interface EmailCampaign {
+  id: string
+  agent_id: string
+  subject: string
+  body: string
+  recipient_count: number
+  status: 'draft' | 'sent' | 'failed'
+  created_at: string
+  sent_at: string | null
+}
+
+export interface SubAgentProfile extends Profile {
+  order_count?: number
+  store_revenue?: number
 }
 
 export interface DataPackage {
@@ -227,6 +303,13 @@ export interface StoreOrder {
   package_label: string
   amount: number
   status: TransactionStatus
+  promo_code_id: string | null
+  parent_agent_id: string | null
+  agent_profit: number
+  sub_agent_earnings: number
+  parent_earnings: number
+  is_promo: boolean
+  earnings_settled: boolean
   created_at: string
 }
 
@@ -237,6 +320,8 @@ export interface Withdrawal {
   momo_number: string
   momo_network: string
   status: TransactionStatus
+  parent_agent_id: string | null
+  parent_approved: boolean
   created_at: string
 }
 

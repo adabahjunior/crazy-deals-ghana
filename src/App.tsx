@@ -5,6 +5,8 @@ import { AdminRoute } from './components/AdminRoute'
 import DashboardLayout from './components/DashboardLayout'
 import AdminLayout from './components/AdminLayout'
 import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import OverviewPage from './pages/OverviewPage'
 import WalletPage from './pages/WalletPage'
 import TransactionHistoryPage from './pages/TransactionHistoryPage'
@@ -31,6 +33,19 @@ import AdminOrdersPage from './pages/admin/AdminOrdersPage'
 import PublicStorePage from './pages/PublicStorePage'
 import ApiDocsPage from './pages/ApiDocsPage'
 import RewardsPage from './pages/RewardsPage'
+import CustomersPage from './pages/CustomersPage'
+import MorePage from './pages/MorePage'
+import PromoCodesPage from './pages/tools/PromoCodesPage'
+import PerformancePage from './pages/tools/PerformancePage'
+import WhatsAppBotPage from './pages/tools/WhatsAppBotPage'
+import EmailMarketingPage from './pages/tools/EmailMarketingPage'
+import SubAgentsPage from './pages/tools/SubAgentsPage'
+import SubAgentOrdersPage from './pages/tools/SubAgentOrdersPage'
+import SubAgentWithdrawalsPage from './pages/tools/SubAgentWithdrawalsPage'
+import AgentPricingPage from './pages/tools/AgentPricingPage'
+import AdminWithdrawalsPage from './pages/admin/AdminWithdrawalsPage'
+import AdminPromoCodesPage from './pages/admin/AdminPromoCodesPage'
+import AdminSubAgentsPage from './pages/admin/AdminSubAgentsPage'
 import { hasSupabaseEnv, supabaseEnvError } from './lib/supabase'
 
 export default function App() {
@@ -50,7 +65,10 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route element={<PublicRoute />}>
-            <Route path="/" element={<LoginPage />} />
+            <Route path="/" element={<Navigate to="/auth/login" replace />} />
+            <Route path="/auth/login" element={<LoginPage />} />
+            <Route path="/auth/register" element={<RegisterPage />} />
+            <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
           </Route>
 
           <Route path="/store/:slug" element={<PublicStorePage />} />
@@ -59,6 +77,20 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardLayout />}>
               <Route index element={<OverviewPage />} />
+              <Route path="products" element={<StorePackagesPage />} />
+              <Route path="orders" element={<StoreOrdersPage />} />
+              <Route path="customers" element={<CustomersPage />} />
+              <Route path="withdrawals" element={<StoreWithdrawalPage />} />
+              <Route path="promo-codes" element={<PromoCodesPage />} />
+              <Route path="performance" element={<PerformancePage />} />
+              <Route path="whatsapp-bot" element={<WhatsAppBotPage />} />
+              <Route path="email-marketing" element={<EmailMarketingPage />} />
+              <Route path="sub-agents" element={<SubAgentsPage />} />
+              <Route path="sub-agent-transactions" element={<SubAgentOrdersPage />} />
+              <Route path="sub-agent-withdrawals" element={<SubAgentWithdrawalsPage />} />
+              <Route path="agent-pricing" element={<AgentPricingPage />} />
+              <Route path="more" element={<MorePage />} />
+              <Route path="settings" element={<MySettingsPage />} />
               <Route path="wallet" element={<WalletPage />} />
               <Route path="transactions" element={<TransactionHistoryPage />} />
               <Route path="buy-mtn" element={<BuyMtnDataPage />} />
@@ -69,11 +101,10 @@ export default function App() {
               <Route path="extra-services" element={<ExtraServicesPage />} />
               <Route path="rewards" element={<RewardsPage />} />
               <Route path="my-store" element={<MyStorePage />} />
-              <Route path="store-packages" element={<StorePackagesPage />} />
-              <Route path="store-orders" element={<StoreOrdersPage />} />
-              <Route path="store-withdrawal" element={<StoreWithdrawalPage />} />
+              <Route path="store-packages" element={<Navigate to="/dashboard/products" replace />} />
+              <Route path="store-orders" element={<Navigate to="/dashboard/orders" replace />} />
+              <Route path="store-withdrawal" element={<Navigate to="/dashboard/withdrawals" replace />} />
               <Route path="developer-api" element={<DeveloperApiPage />} />
-              <Route path="settings" element={<MySettingsPage />} />
               <Route path="report-issue" element={<ReportIssuePage />} />
             </Route>
           </Route>
@@ -87,10 +118,13 @@ export default function App() {
               <Route path="users/:userId" element={<AdminUserDetailPage />} />
               <Route path="settings" element={<AdminSettingsPage />} />
               <Route path="notifications" element={<AdminNotificationsPage />} />
+              <Route path="withdrawals" element={<AdminWithdrawalsPage />} />
+              <Route path="promo-codes" element={<AdminPromoCodesPage />} />
+              <Route path="sub-agents" element={<AdminSubAgentsPage />} />
             </Route>
           </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/auth/login" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

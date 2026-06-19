@@ -24,6 +24,7 @@ interface AuthContextType {
   refreshProfile: () => Promise<void>
   updateProfile: (data: { full_name?: string; phone?: string }) => Promise<{ error: string | null }>
   updatePassword: (newPassword: string) => Promise<{ error: string | null }>
+  acceptSubAgentInvite: (inviteCode: string) => Promise<{ error: string | null }>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -145,6 +146,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null }
   }, [])
 
+  const acceptSubAgentInvite = useCallback(async (inviteCode: string) => {
+    const code = inviteCode.trim()
+    if (!code) return { error: null }
+    const { error } = await supabase.rpc('accept_sub_agent_invite', { p_invite_code: code })
+    if (error) return { error: error.message }
+    await refreshProfile()
+    return { error: null }
+  }, [refreshProfile])
+
   return (
     <AuthContext.Provider
       value={{
@@ -161,6 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refreshProfile,
         updateProfile,
         updatePassword,
+        acceptSubAgentInvite,
       }}
     >
       {children}

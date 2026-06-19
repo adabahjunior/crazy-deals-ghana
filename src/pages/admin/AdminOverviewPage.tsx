@@ -9,7 +9,7 @@ export default function AdminOverviewPage() {
   if (loading) {
     return (
       <>
-        <PageHeader title="Admin Overview" description="Site-wide statistics and health at a glance" />
+        <PageHeader title="Dashboard" description="Site-wide statistics and health at a glance" />
         <p style={{ color: 'var(--text-secondary)' }}>Loading dashboard...</p>
       </>
     )
@@ -18,7 +18,7 @@ export default function AdminOverviewPage() {
   if (error || !stats) {
     return (
       <>
-        <PageHeader title="Admin Overview" description="Site-wide statistics and health at a glance" />
+        <PageHeader title="Dashboard" description="Site-wide statistics and health at a glance" />
         <div className="auth-error">{error ?? 'Failed to load dashboard'}</div>
       </>
     )
@@ -27,8 +27,8 @@ export default function AdminOverviewPage() {
   return (
     <>
       <PageHeader
-        title="Website Overview"
-        description="Revenue, orders, and platform activity at a glance"
+        title="Dashboard"
+        description="Revenue, orders, users, and platform activity at a glance"
       />
 
       <div className="stats-grid">

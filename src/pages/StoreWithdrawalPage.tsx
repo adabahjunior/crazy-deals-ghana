@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import PageHeader from '../components/PageHeader'
-import { formatMoney } from '../hooks/useTransactions'
+import { useOwnWithdrawals } from '../hooks/useAgentTools'
+import { formatDate, formatMoney } from '../hooks/useTransactions'
 
 export default function StoreWithdrawalPage() {
-  const { profile, refreshProfile } = useAuth()
+  const { profile, refreshProfile, user } = useAuth()
+  const { withdrawals, loading: historyLoading, refresh: refreshHistory } = useOwnWithdrawals(user?.id)
   const [amount, setAmount] = useState('')
   const [momoNumber, setMomoNumber] = useState('')
   const [momoNetwork, setMomoNetwork] = useState('MTN Mobile Money')
@@ -43,23 +44,26 @@ export default function StoreWithdrawalPage() {
     setAmount('')
     setMomoNumber('')
     await refreshProfile()
+    await refreshHistory()
   }
 
   return (
     <>
-      <PageHeader
-        title="Store Withdrawal"
-        description="Withdraw your store earnings to your mobile money"
-      />
-
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="label">Available for Withdrawal</div>
-          <div className="value accent">{formatMoney(profile?.store_balance ?? 0)}</div>
+      <div className="dm-page-head">
+        <div>
+          <h1>Withdrawals</h1>
+          <p>Withdraw your store earnings to mobile money</p>
         </div>
-        <div className="stat-card">
-          <div className="label">Total Withdrawn</div>
-          <div className="value">{formatMoney(profile?.total_withdrawn ?? 0)}</div>
+      </div>
+
+      <div className="dm-stats-grid dm-stats-grid-2">
+        <div className="dm-stat-card">
+          <span className="dm-stat-label">Available for Withdrawal</span>
+          <div className="dm-stat-value accent">{formatMoney(profile?.store_balance ?? 0)}</div>
+        </div>
+        <div className="dm-stat-card">
+          <span className="dm-stat-label">Total Withdrawn</span>
+          <div className="dm-stat-value">{formatMoney(profile?.total_withdrawn ?? 0)}</div>
         </div>
       </div>
 
@@ -112,6 +116,44 @@ export default function StoreWithdrawalPage() {
             {loading ? 'Submitting...' : 'Request Withdrawal'}
           </button>
         </div>
+      </div>
+
+      <div className="content-card">
+        <h2>Withdrawal History</h2>
+        {historyLoading ? (
+          <p style={{ color: 'var(--dm-surface-400)' }}>Loading history...</p>
+        ) : withdrawals.length === 0 ? (
+          <div className="empty-state"><p>No withdrawals yet.</p></div>
+        ) : (
+          <div className="table-scroll">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Amount</th>
+                  <th>MoMo</th>
+                  <th>Network</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {withdrawals.map((w) => (
+                  <tr key={w.id}>
+                    <td>{formatDate(w.created_at)}</td>
+                    <td>{formatMoney(w.amount)}</td>
+                    <td>{w.momo_number}</td>
+                    <td>{w.momo_network}</td>
+                    <td>
+                      <span className={`status-badge ${w.status}`}>
+                        {w.status.charAt(0).toUpperCase() + w.status.slice(1)}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </>
   )

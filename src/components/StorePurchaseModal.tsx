@@ -11,6 +11,14 @@ export interface PublicStorePackage {
   validity?: string
 }
 
+interface PromoValidation {
+  valid: boolean
+  message: string
+  original_amount?: number
+  final_amount?: number
+  promo_label?: string
+}
+
 interface StorePurchaseModalProps {
   pkg: PublicStorePackage | null
   storeSlug: string
@@ -27,11 +35,51 @@ export default function StorePurchaseModal({
   onClose,
 }: StorePurchaseModalProps) {
   const [phone, setPhone] = useState('')
+  const [promoCode, setPromoCode] = useState('')
+  const [promo, setPromo] = useState<PromoValidation | null>(null)
+  const [validatingPromo, setValidatingPromo] = useState(false)
   const [step, setStep] = useState<'form' | 'success'>('form')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [isPromoOrder, setIsPromoOrder] = useState(false)
 
   if (!pkg) return null
+
+  const displayPrice = promo?.valid ? Number(promo.final_amount ?? 0) : Number(pkg.price)
+
+  const applyPromo = async () => {
+    setError('')
+    setPromo(null)
+    const code = promoCode.trim()
+    if (!code) return
+
+    setValidatingPromo(true)
+    const { data, error: rpcError } = await supabase.rpc('validate_promo_code', {
+      p_slug: storeSlug,
+      p_code: code,
+      p_package_id: pkg.id,
+    })
+    setValidatingPromo(false)
+
+    if (rpcError) {
+      setError(rpcError.message)
+      return
+    }
+
+    const result = data as PromoValidation
+    setPromo(result)
+    if (!result.valid) {
+      setError(result.message)
+    } else {
+      setError('')
+    }
+  }
+
+  const clearPromo = () => {
+    setPromoCode('')
+    setPromo(null)
+    setError('')
+  }
 
   const handleOrder = async () => {
     setError('')
@@ -41,12 +89,18 @@ export default function StorePurchaseModal({
       return
     }
 
+    if (promoCode.trim() && !promo?.valid) {
+      setError('Apply a valid promo code or remove it before placing your order')
+      return
+    }
+
     setLoading(true)
     const { error: rpcError } = await supabase.rpc('place_store_order', {
       p_slug: storeSlug,
       p_package_id: pkg.id,
       p_customer_phone: cleaned,
-    } as { p_slug: string; p_package_id: string; p_customer_phone: string })
+      p_promo_code: promo?.valid ? promoCode.trim() : null,
+    })
     setLoading(false)
 
     if (rpcError) {
@@ -54,17 +108,23 @@ export default function StorePurchaseModal({
       return
     }
 
+    setIsPromoOrder(!!promo?.valid)
     setStep('success')
   }
 
   const handleClose = () => {
     setPhone('')
+    setPromoCode('')
+    setPromo(null)
     setStep('form')
     setError('')
+    setIsPromoOrder(false)
     onClose()
   }
 
-  const whatsappMessage = `Hi ${storeName}, I just placed an order for ${pkg.network} ${pkg.size_gb}GB (GHS ${Number(pkg.price).toFixed(2)}) to be sent to ${phone.replace(/\s/g, '')}.`
+  const whatsappMessage = isPromoOrder
+    ? `Hi ${storeName}, I redeemed promo code ${promoCode.trim().toUpperCase()} for ${pkg.network} ${pkg.size_gb}GB to ${phone.replace(/\s/g, '')}.`
+    : `Hi ${storeName}, I just placed an order for ${pkg.network} ${pkg.size_gb}GB (GHS ${displayPrice.toFixed(2)}) to be sent to ${phone.replace(/\s/g, '')}.`
 
   return (
     <div className="modal-overlay" onClick={handleClose}>
@@ -91,9 +151,21 @@ export default function StorePurchaseModal({
                 <span className="label">Validity</span>
                 <span className="value">{pkg.validity ?? 'Non expiry'}</span>
               </div>
+              {promo?.valid && (
+                <div className="modal-summary-row">
+                  <span className="label">Promo</span>
+                  <span className="value" style={{ color: '#4ade80' }}>{promo.promo_label}</span>
+                </div>
+              )}
               <div className="modal-summary-row total">
                 <span className="label">Price</span>
-                <span className="value">GHS {Number(pkg.price).toFixed(2)}</span>
+                <span className="value">
+                  {promo?.valid && displayPrice === 0 ? (
+                    <span style={{ color: '#4ade80' }}>FREE</span>
+                  ) : (
+                    <>GHS {displayPrice.toFixed(2)}</>
+                  )}
+                </span>
               </div>
             </div>
 
@@ -109,22 +181,57 @@ export default function StorePurchaseModal({
               />
             </div>
 
+            <div className="form-group">
+              <label htmlFor="store-promo">Promo Code (optional)</label>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input
+                  id="store-promo"
+                  type="text"
+                  className="form-input"
+                  placeholder="e.g. CD-A1B2C3"
+                  value={promoCode}
+                  onChange={(e) => {
+                    setPromoCode(e.target.value.toUpperCase())
+                    setPromo(null)
+                  }}
+                />
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={applyPromo}
+                  disabled={validatingPromo || !promoCode.trim()}
+                >
+                  {validatingPromo ? '...' : 'Apply'}
+                </button>
+              </div>
+              {promo?.valid && (
+                <p style={{ color: '#4ade80', fontSize: '0.85rem', marginTop: '0.5rem' }}>
+                  {promo.message}{' '}
+                  <button type="button" className="btn btn-ghost" style={{ padding: 0 }} onClick={clearPromo}>
+                    Remove
+                  </button>
+                </p>
+              )}
+            </div>
+
             {error && <div className="auth-error" style={{ marginTop: '0.75rem' }}>{error}</div>}
 
             <div className="modal-actions">
               <button className="btn btn-secondary" onClick={handleClose}>Cancel</button>
               <button className="btn btn-primary" onClick={handleOrder} disabled={loading}>
-                {loading ? 'Placing order...' : 'Place Order'}
+                {loading ? 'Placing order...' : promo?.valid ? 'Redeem Free Data' : 'Place Order'}
               </button>
             </div>
           </>
         ) : (
           <div className="modal-success">
             <CheckCircle />
-            <h3>Order Placed!</h3>
+            <h3>{isPromoOrder ? 'Promo Redeemed!' : 'Order Placed!'}</h3>
             <p>
-              Your order for {pkg.size_gb}GB {pkg.network} has been submitted.
-              Contact the store on WhatsApp to complete payment and delivery.
+              {isPromoOrder
+                ? `Your free ${pkg.size_gb}GB ${pkg.network} bundle has been submitted for ${phone.replace(/\s/g, '')}.`
+                : `Your order for ${pkg.size_gb}GB ${pkg.network} has been submitted.`}
+              {' '}Contact the store on WhatsApp to complete payment and delivery.
             </p>
             <a
               href={getWhatsAppUrl(whatsapp, whatsappMessage)}

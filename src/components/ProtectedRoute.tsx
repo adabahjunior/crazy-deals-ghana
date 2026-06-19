@@ -3,9 +3,9 @@ import { useAuth } from '../context/AuthContext'
 
 function AuthLoading() {
   return (
-    <div className="auth-page">
-      <div className="auth-card" style={{ textAlign: 'center' }}>
-        <p style={{ color: 'var(--text-secondary)' }}>Loading...</p>
+    <div className="dm-auth-page">
+      <div className="dm-auth-shell dm-auth-loading">
+        <p>Loading...</p>
       </div>
     </div>
   )
@@ -14,7 +14,7 @@ function AuthLoading() {
 export function ProtectedRoute() {
   const { isAuthenticated, loading } = useAuth()
   if (loading) return <AuthLoading />
-  if (!isAuthenticated) return <Navigate to="/" replace />
+  if (!isAuthenticated) return <Navigate to="/auth/login" replace />
   return <Outlet />
 }
 
